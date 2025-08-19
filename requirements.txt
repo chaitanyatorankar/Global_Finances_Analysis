@@ -1,0 +1,5 @@
+pandas
+numpy
+yfinances
+datetime
+streamlit
