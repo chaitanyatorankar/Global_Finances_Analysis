@@ -1,8 +1,6 @@
+streamlit
 pandas
 numpy
 yfinance
-datetime
-streamlit
 matplotlib
-adfuller
-ARIMA
+statsmodels
