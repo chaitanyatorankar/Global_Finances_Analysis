@@ -3,3 +3,6 @@ numpy
 yfinances
 datetime
 streamlit
+matplotlib
+adfuller
+ARIMA
