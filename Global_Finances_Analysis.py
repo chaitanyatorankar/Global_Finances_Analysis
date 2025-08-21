@@ -47,7 +47,7 @@ def arima_analysis(stock_symbol, label):
     return forecast_df, (stat_close, stat_diff, df)
 
 # --- Streamlit UI ---
-st.set_page_config(page_title="Global Finance Analysis - ARIMA Forecast", layout="wide")
+st.set_page_config(page_title="Global Finance Analysis - ARIMA Forecast", layout="wide", page_icon="🌍")
 st.title("🌍 Global Finance Analysis with ARIMA Forecasting")
 st.markdown("Analyze IT & Banking stock prices and forecast trends using ARIMA models.")
 
