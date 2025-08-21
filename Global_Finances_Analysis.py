@@ -5,14 +5,14 @@ import yfinance as yf
 import datetime as d
 from statsmodels.tsa.stattools import adfuller
 from statsmodels.tsa.arima.model import ARIMA
-import matplotlib.pyplot as plt
+import plotly.graph_objects as go
 
 # --- Sidebar Settings ---
 st.set_page_config(page_title="Global Finance Analysis - ARIMA Forecast", layout="wide")
 
 st.sidebar.header("⚙️ Customize Analysis")
 
-# Date range input (with default values)
+# Date range input
 default_start = d.date(2022, 1, 1)
 default_end = d.date(2025, 7, 10)
 
@@ -27,11 +27,11 @@ end_date = st.sidebar.date_input("📅 End Date", default_end,
 # Forecast horizon selection
 forecast_days = st.sidebar.number_input(
     "🔮 Forecast Days (Business Days)", 
-    min_value=5, max_value=60, value=10, step=5,
-    help="Choose how many business days ahead to forecast"
+    min_value=5, max_value=60, value=10, step=5
 )
 
 # --- Function to Check Stationarity ---
+from statsmodels.tsa.stattools import adfuller
 def check_stationarity(timeseries):
     result = adfuller(timeseries.dropna())
     return {
@@ -47,8 +47,7 @@ def arima_analysis(stock_symbol, label, s, e, forecast_horizon):
         st.error(f"No data found for {label} ({stock_symbol}) in given date range.")
         return None, None
 
-    df = df[['Close']].copy().reset_index()
-    df.dropna(inplace=True)
+    df = df.reset_index().dropna()
 
     # Stationarity checks
     stat_close = check_stationarity(df['Close'])
@@ -59,7 +58,7 @@ def arima_analysis(stock_symbol, label, s, e, forecast_horizon):
     model = ARIMA(df['Close'], order=(5, 1, 0))
     model_fit = model.fit()
 
-    # Forecast user-selected horizon
+    # Forecast
     forecast = model_fit.forecast(steps=forecast_horizon)
     future_dates = pd.date_range(start=df['Date'].iloc[-1], periods=forecast_horizon+1, freq='B')[1:]
     forecast_df = pd.DataFrame({'Date': future_dates, f'{label}_Forecast': forecast.values})
@@ -67,8 +66,8 @@ def arima_analysis(stock_symbol, label, s, e, forecast_horizon):
     return forecast_df, (stat_close, stat_diff, df)
 
 # --- Main UI ---
-st.title("🌍 Global Finance Analysis with ARIMA Forecasting")
-st.markdown("Analyze IT & Banking stock prices and forecast trends using ARIMA models.")
+st.title("🌍 Global Finance Analysis with ARIMA Forecasting (Candlesticks + Volume)")
+st.markdown("Analyze IT & Banking stock prices and forecast trends using ARIMA models with candlestick charts.")
 
 # --- Stock Selection ---
 stock_dict = {
@@ -109,17 +108,49 @@ if forecast_df is not None:
         st.write(f"p-value: {stat_diff['p-value']:.4f}")
         st.write("✅ Stationary" if stat_diff['Stationary'] else "❌ Not Stationary")
 
-    # Forecast Plot
-    st.subheader("📊 Forecast Plot")
-    fig, ax = plt.subplots(figsize=(10, 5))
-    ax.plot(df['Date'], df['Close'], label='Actual Close')
-    ax.plot(forecast_df['Date'], forecast_df[f'{stock_choice}_Forecast'],
-            label=f'Forecast ({forecast_days} days)', linestyle='--')
-    ax.set_xlabel('Date')
-    ax.set_ylabel('Price')
-    ax.set_title(f"{stock_choice} Price Forecast - Next {forecast_days} Business Days")
-    ax.legend()
-    st.pyplot(fig)
+    # --- Candlestick + Forecast ---
+    st.subheader(f"📊 Candlestick Forecast for {stock_choice} ({forecast_days} Business Days Ahead)")
+
+    fig = go.Figure()
+
+    # Candlestick for actual data
+    fig.add_trace(go.Candlestick(
+        x=df['Date'],
+        open=df['Open'],
+        high=df['High'],
+        low=df['Low'],
+        close=df['Close'],
+        name="Actual"
+    ))
+
+    # Forecast line
+    fig.add_trace(go.Scatter(
+        x=forecast_df['Date'],
+        y=forecast_df[f'{stock_choice}_Forecast'],
+        mode='lines+markers',
+        line=dict(color="blue", dash="dot"),
+        name="Forecast"
+    ))
+
+    # Volume bars
+    fig.add_trace(go.Bar(
+        x=df['Date'],
+        y=df['Volume'],
+        name="Volume",
+        marker=dict(color="rgba(128,128,128,0.3)"),
+        yaxis="y2"
+    ))
+
+    # Layout
+    fig.update_layout(
+        title=f"{stock_choice} Price Forecast with Volume",
+        xaxis=dict(title="Date", rangeslider=dict(visible=False)),
+        yaxis=dict(title="Price"),
+        yaxis2=dict(title="Volume", overlaying="y", side="right", showgrid=False),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
 
     # Forecast Table
     st.subheader("🔢 Forecasted Values")
