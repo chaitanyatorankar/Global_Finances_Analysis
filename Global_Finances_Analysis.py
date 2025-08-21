@@ -17,12 +17,19 @@ default_start = d.date(2022, 1, 1)
 default_end = d.date(2025, 7, 10)
 
 start_date = st.sidebar.date_input("📅 Start Date", default_start, 
-                                   min_value=d.date(2015, 1, 1),  # lower limit
-                                   max_value=d.date.today())       # cannot exceed today
+                                   min_value=d.date(2015, 1, 1), 
+                                   max_value=d.date.today())
 
 end_date = st.sidebar.date_input("📅 End Date", default_end, 
-                                 min_value=start_date,            # must be after start
+                                 min_value=start_date, 
                                  max_value=d.date.today())
+
+# Forecast horizon selection
+forecast_days = st.sidebar.number_input(
+    "🔮 Forecast Days (Business Days)", 
+    min_value=5, max_value=60, value=10, step=5,
+    help="Choose how many business days ahead to forecast"
+)
 
 # --- Function to Check Stationarity ---
 def check_stationarity(timeseries):
@@ -34,7 +41,7 @@ def check_stationarity(timeseries):
     }
 
 # --- ARIMA Analysis Function ---
-def arima_analysis(stock_symbol, label, s, e):
+def arima_analysis(stock_symbol, label, s, e, forecast_horizon):
     df = yf.download(stock_symbol, start=s, end=e, auto_adjust=False)
     if df.empty:
         st.error(f"No data found for {label} ({stock_symbol}) in given date range.")
@@ -52,9 +59,9 @@ def arima_analysis(stock_symbol, label, s, e):
     model = ARIMA(df['Close'], order=(5, 1, 0))
     model_fit = model.fit()
 
-    # Forecast next 10 business days
-    forecast = model_fit.forecast(steps=10)
-    future_dates = pd.date_range(start=df['Date'].iloc[-1], periods=11, freq='B')[1:]
+    # Forecast user-selected horizon
+    forecast = model_fit.forecast(steps=forecast_horizon)
+    future_dates = pd.date_range(start=df['Date'].iloc[-1], periods=forecast_horizon+1, freq='B')[1:]
     forecast_df = pd.DataFrame({'Date': future_dates, f'{label}_Forecast': forecast.values})
 
     return forecast_df, (stat_close, stat_diff, df)
@@ -81,7 +88,7 @@ stock_choice = st.selectbox("📌 Select a Stock:", list(stock_dict.keys()))
 symbol = stock_dict[stock_choice]
 
 # --- Run Analysis ---
-forecast_df, results = arima_analysis(symbol, stock_choice, start_date, end_date)
+forecast_df, results = arima_analysis(symbol, stock_choice, start_date, end_date, forecast_days)
 
 if forecast_df is not None:
     stat_close, stat_diff, df = results
@@ -107,10 +114,10 @@ if forecast_df is not None:
     fig, ax = plt.subplots(figsize=(10, 5))
     ax.plot(df['Date'], df['Close'], label='Actual Close')
     ax.plot(forecast_df['Date'], forecast_df[f'{stock_choice}_Forecast'],
-            label='Forecast', linestyle='--')
+            label=f'Forecast ({forecast_days} days)', linestyle='--')
     ax.set_xlabel('Date')
     ax.set_ylabel('Price')
-    ax.set_title(f"{stock_choice} Price Forecast")
+    ax.set_title(f"{stock_choice} Price Forecast - Next {forecast_days} Business Days")
     ax.legend()
     st.pyplot(fig)
 
