@@ -7,9 +7,22 @@ from statsmodels.tsa.stattools import adfuller
 from statsmodels.tsa.arima.model import ARIMA
 import matplotlib.pyplot as plt
 
-# --- Set Date Range ---
-s = d.datetime(2025, 1, 1)
-e = d.datetime(2025, 7, 10)
+# --- Sidebar Settings ---
+st.set_page_config(page_title="Global Finance Analysis - ARIMA Forecast", layout="wide")
+
+st.sidebar.header("⚙️ Customize Analysis")
+
+# Date range input (with default values)
+default_start = d.date(2022, 1, 1)
+default_end = d.date(2025, 7, 10)
+
+start_date = st.sidebar.date_input("📅 Start Date", default_start, 
+                                   min_value=d.date(2015, 1, 1),  # lower limit
+                                   max_value=d.date.today())       # cannot exceed today
+
+end_date = st.sidebar.date_input("📅 End Date", default_end, 
+                                 min_value=start_date,            # must be after start
+                                 max_value=d.date.today())
 
 # --- Function to Check Stationarity ---
 def check_stationarity(timeseries):
@@ -21,7 +34,7 @@ def check_stationarity(timeseries):
     }
 
 # --- ARIMA Analysis Function ---
-def arima_analysis(stock_symbol, label):
+def arima_analysis(stock_symbol, label, s, e):
     df = yf.download(stock_symbol, start=s, end=e, auto_adjust=False)
     if df.empty:
         st.error(f"No data found for {label} ({stock_symbol}) in given date range.")
@@ -46,8 +59,7 @@ def arima_analysis(stock_symbol, label):
 
     return forecast_df, (stat_close, stat_diff, df)
 
-# --- Streamlit UI ---
-st.set_page_config(page_title="Global Finance Analysis - ARIMA Forecast", layout="wide", page_icon="🌍")
+# --- Main UI ---
 st.title("🌍 Global Finance Analysis with ARIMA Forecasting")
 st.markdown("Analyze IT & Banking stock prices and forecast trends using ARIMA models.")
 
@@ -69,7 +81,7 @@ stock_choice = st.selectbox("📌 Select a Stock:", list(stock_dict.keys()))
 symbol = stock_dict[stock_choice]
 
 # --- Run Analysis ---
-forecast_df, results = arima_analysis(symbol, stock_choice)
+forecast_df, results = arima_analysis(symbol, stock_choice, start_date, end_date)
 
 if forecast_df is not None:
     stat_close, stat_diff, df = results
