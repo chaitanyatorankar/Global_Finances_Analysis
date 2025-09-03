@@ -9,7 +9,6 @@ import matplotlib.pyplot as plt
 
 # --- Sidebar Settings ---
 st.set_page_config(page_title="Global Finance Analysis - ARIMA Forecast", layout="wide")
-
 st.sidebar.header("⚙️ Customize Analysis")
 
 # Date range input (with default values)
@@ -84,10 +83,15 @@ sector_stocks = {
     "Japan": {
         "IT": {
             "Sony": "6758.T",
-            "Nintendo": "7974.T"
+            "Nintendo": "7974.T",
+            "Hitachi": "6501.T"
         },
         "Banking": {
             "MUFG": "8306.T"
+        },
+        "Conglomerates": {
+            "Toyota": "7203.T",
+            "SoftBank": "9984.T"
         }
     },
     "UK": {
@@ -100,6 +104,12 @@ sector_stocks = {
         },
         "Pharma": {
             "AstraZeneca": "AZN.L"
+        },
+        "Beverages": {
+            "Diageo": "DGE.L"
+        },
+        "Publishing": {
+            "RELX": "REL.L"
         }
     },
     "Hong Kong": {
@@ -118,18 +128,15 @@ sector_stocks = {
     }
 }
 
-# --- Country, Sector, Stock Selection ---
-st.sidebar.subheader("🌎 Country & Sector Selection")
+# --- Main UI ---
+st.title("🌍 Global Finance Analysis with ARIMA Forecasting")
+st.markdown("Analyze IT, Banking & Global stock prices and forecast trends using ARIMA models.")
 
-# Step 1: Select Country
-country_choice = st.sidebar.selectbox("Select Country", list(sector_stocks.keys()))
-
-# Step 2: Select Sector (based on country)
-sector_choice = st.sidebar.selectbox("Select Sector", list(sector_stocks[country_choice].keys()))
-
-# Step 3: Select Stock (based on sector)
-stock_choice = st.sidebar.selectbox("Select Stock", list(sector_stocks[country_choice][sector_choice].keys()))
-symbol = sector_stocks[country_choice][sector_choice][stock_choice]
+# --- Multi-level Stock Selection ---
+region_choice = st.sidebar.selectbox("🌐 Select Region", list(sector_stocks.keys()))
+sector_choice = st.sidebar.selectbox("🏢 Select Sector", list(sector_stocks[region_choice].keys()))
+stock_choice = st.sidebar.selectbox("📌 Select a Stock", list(sector_stocks[region_choice][sector_choice].keys()))
+symbol = sector_stocks[region_choice][sector_choice][stock_choice]
 
 # --- Run Analysis ---
 forecast_df, results = arima_analysis(symbol, stock_choice, start_date, end_date, forecast_days)
