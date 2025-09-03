@@ -66,50 +66,70 @@ def arima_analysis(stock_symbol, label, s, e, forecast_horizon):
 
     return forecast_df, (stat_close, stat_diff, df)
 
-# --- Main UI ---
-st.title("🌍 Global Finance Analysis with ARIMA Forecasting")
-st.markdown("Analyze IT, Banking & Global stock prices and forecast trends using ARIMA models.")
-
-# --- Stock Selection ---
-stock_dict = {
-    # Indian IT
-    'TCS': 'TCS.NS',
-    'Wipro': 'WIPRO.NS',
-    'Infosys': 'INFY.NS',
-    'HCL Technologies': 'HCLTECH.NS',
-    'Tech Mahindra': 'TECHM.NS',
-
-    # Indian Banks
-    'HDFC Bank': 'HDFCBANK.NS',
-    'ICICI Bank': 'ICICIBANK.NS',
-
-    # Japan
-    'Sony': '6758.T',
-    'Toyota': '7203.T',
-    'SoftBank': '9984.T',
-    'MUFG': '8306.T',
-    'Hitachi': '6501.T',
-    'Nintendo': '7974.T',
-
-    # Hong Kong / China
-    'Tencent': '0700.HK',
-    'ICBC': '1398.HK',
-    'Xiaomi': '1810.HK',
-    'Agricultural Bank of China': '1288.HK',
-    'Bank of China': '3988.HK',
-    'China Mobile': '0941.HK',
-
-    # UK
-    'Shell': 'SHEL.L',
-    'Barclays': 'BARC.L',
-    'AstraZeneca': 'AZN.L',
-    'HSBC': 'HSBA.L',
-    'Diageo': 'DGE.L',
-    'RELX': 'REL.L'
+# --- Sector-wise Stock Dictionary ---
+sector_stocks = {
+    "India": {
+        "IT": {
+            "TCS": "TCS.NS",
+            "Wipro": "WIPRO.NS",
+            "Infosys": "INFY.NS",
+            "HCL Technologies": "HCLTECH.NS",
+            "Tech Mahindra": "TECHM.NS"
+        },
+        "Banking": {
+            "HDFC Bank": "HDFCBANK.NS",
+            "ICICI Bank": "ICICIBANK.NS"
+        }
+    },
+    "Japan": {
+        "IT": {
+            "Sony": "6758.T",
+            "Nintendo": "7974.T"
+        },
+        "Banking": {
+            "MUFG": "8306.T"
+        }
+    },
+    "UK": {
+        "Energy": {
+            "Shell": "SHEL.L"
+        },
+        "Banking": {
+            "Barclays": "BARC.L",
+            "HSBC": "HSBA.L"
+        },
+        "Pharma": {
+            "AstraZeneca": "AZN.L"
+        }
+    },
+    "Hong Kong": {
+        "Tech": {
+            "Tencent": "0700.HK",
+            "Xiaomi": "1810.HK"
+        },
+        "Banking": {
+            "ICBC": "1398.HK",
+            "Bank of China": "3988.HK",
+            "Agricultural Bank of China": "1288.HK"
+        },
+        "Telecom": {
+            "China Mobile": "0941.HK"
+        }
+    }
 }
 
-stock_choice = st.selectbox("📌 Select a Stock:", list(stock_dict.keys()))
-symbol = stock_dict[stock_choice]
+# --- Country, Sector, Stock Selection ---
+st.sidebar.subheader("🌎 Country & Sector Selection")
+
+# Step 1: Select Country
+country_choice = st.sidebar.selectbox("Select Country", list(sector_stocks.keys()))
+
+# Step 2: Select Sector (based on country)
+sector_choice = st.sidebar.selectbox("Select Sector", list(sector_stocks[country_choice].keys()))
+
+# Step 3: Select Stock (based on sector)
+stock_choice = st.sidebar.selectbox("Select Stock", list(sector_stocks[country_choice][sector_choice].keys()))
+symbol = sector_stocks[country_choice][sector_choice][stock_choice]
 
 # --- Run Analysis ---
 forecast_df, results = arima_analysis(symbol, stock_choice, start_date, end_date, forecast_days)
